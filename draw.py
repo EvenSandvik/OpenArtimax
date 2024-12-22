@@ -1,16 +1,27 @@
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageDraw, ImageTk
+import time
 
 
 class DrawInBox:
     def __init__(self, root):
+        
         self.root = root
         self.root.title("OpenArtimax")
 
-        # Set up canvas
+        self.last_update_time = time.time()  # Track the last update time
+        self.update_interval = 0.05  # Minimum interval between updates (in seconds)
+
+        # Define canvas dimensions and other variables before creating the toolbar
         self.canvas_width = 750
         self.canvas_height = 500
+        self.brush_size = 4  # Define brush size here
+
+        # Top toolbar
+        self.create_toolbar()
+
+        # Set up canvas
         self.canvas = tk.Canvas(root, width=self.canvas_width, height=self.canvas_height, bg="white")
         self.canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -18,16 +29,12 @@ class DrawInBox:
         self.drawing = False
         self.last_x, self.last_y = None, None
         self.color = "black"
-        self.brush_size = 4
         self.erasing = False
 
         # Layers for drawing
         self.layers = []
         self.current_layer_index = 0
         self.add_new_layer()  # Add the initial layer
-
-        # Top toolbar
-        self.create_toolbar()
 
         # Bind events
         self.canvas.bind("<ButtonPress-1>", self.start_drawing)
@@ -139,7 +146,12 @@ class DrawInBox:
             else:
                 draw.line([self.last_x, self.last_y, x, y], fill=self.color, width=self.brush_size)
             self.last_x, self.last_y = x, y
-            self.update_canvas()
+
+            # Update the canvas only if sufficient time has passed
+            current_time = time.time()
+            if current_time - self.last_update_time >= self.update_interval:
+                self.update_canvas()
+                self.last_update_time = current_time
 
     def stop_drawing(self, event):
         self.drawing = False
