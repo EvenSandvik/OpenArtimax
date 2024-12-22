@@ -18,10 +18,12 @@ class DrawInBox:
         self.last_x, self.last_y = None, None
         self.color = "black"
         self.brush_size = 2
+        self.erasing = False
 
-        # Image for saving
-        self.image = Image.new("RGB", (self.canvas_width, self.canvas_height), "white")
-        self.draw = ImageDraw.Draw(self.image)
+        # Layers for drawing
+        self.layers = []
+        self.current_layer_index = 0
+        self.add_new_layer()  # Add the initial layer
 
         # Set up controls
         control_frame = tk.Frame(root)
@@ -48,9 +50,17 @@ class DrawInBox:
 
         tk.Button(control_frame, text="Set Brush Size", command=self.set_brush_size).pack(side="left")
 
+        # Layer controls
+        tk.Button(control_frame, text="Add Layer", command=self.add_new_layer).pack(side="left")
+        tk.Button(control_frame, text="Next Layer", command=self.next_layer).pack(side="left")
+        tk.Button(control_frame, text="Previous Layer", command=self.previous_layer).pack(side="left")
+
         # Load and Save buttons
         tk.Button(control_frame, text="Save Image", command=self.save_image).pack(side="left")
         tk.Button(control_frame, text="Load Image", command=self.load_image).pack(side="left")
+
+        # Eraser toggle
+        tk.Button(control_frame, text="Toggle Eraser", command=self.toggle_eraser).pack(side="left")
 
         # Color buttons
         self.color_frame = tk.Frame(root)
@@ -65,8 +75,32 @@ class DrawInBox:
         self.canvas.bind("<B1-Motion>", self.draw_on_canvas)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
 
+    def add_new_layer(self):
+        new_layer = Image.new("RGBA", (self.canvas_width, self.canvas_height), (255, 255, 255, 0))
+        self.layers.append(new_layer)
+        self.current_layer_index = len(self.layers) - 1
+
+    def next_layer(self):
+        if self.current_layer_index < len(self.layers) - 1:
+            self.current_layer_index += 1
+
+    def previous_layer(self):
+        if self.current_layer_index > 0:
+            self.current_layer_index -= 1
+
+    def update_canvas(self):
+        combined_image = Image.new("RGBA", (self.canvas_width, self.canvas_height))
+        for layer in self.layers:
+            combined_image = Image.alpha_composite(combined_image, layer)
+        self.tk_image = ImageTk.PhotoImage(combined_image)
+        self.canvas.create_image(0, 0, anchor="nw", image=self.tk_image)
+
     def change_color(self, new_color):
         self.color = new_color
+        self.erasing = False
+
+    def toggle_eraser(self):
+        self.erasing = not self.erasing
 
     def start_drawing(self, event):
         self.drawing = True
@@ -75,9 +109,13 @@ class DrawInBox:
     def draw_on_canvas(self, event):
         if self.drawing:
             x, y = event.x, event.y
-            self.canvas.create_line(self.last_x, self.last_y, x, y, fill=self.color, width=self.brush_size)
-            self.draw.line([self.last_x, self.last_y, x, y], fill=self.color, width=self.brush_size)
+            draw = ImageDraw.Draw(self.layers[self.current_layer_index])
+            if self.erasing:
+                draw.line([self.last_x, self.last_y, x, y], fill=(255, 255, 255, 0), width=self.brush_size)
+            else:
+                draw.line([self.last_x, self.last_y, x, y], fill=self.color, width=self.brush_size)
             self.last_x, self.last_y = x, y
+            self.update_canvas()
 
     def stop_drawing(self, event):
         self.drawing = False
@@ -87,16 +125,20 @@ class DrawInBox:
         try:
             new_width = int(self.width_entry.get())
             new_height = int(self.height_entry.get())
-            self.canvas.config(width=new_width, height=new_height)
 
-            # Resize image for saving
-            new_image = Image.new("RGB", (new_width, new_height), "white")
-            new_image.paste(self.image, (0, 0))
-            self.image = new_image
-            self.draw = ImageDraw.Draw(self.image)
+            # Resize all layers
+            resized_layers = []
+            for layer in self.layers:
+                resized_layer = layer.resize((new_width, new_height))
+                resized_layers.append(resized_layer)
+            self.layers = resized_layers
+
+            self.canvas.config(width=new_width, height=new_height)
 
             self.canvas_width = new_width
             self.canvas_height = new_height
+
+            self.update_canvas()
         except ValueError:
             print("Please enter valid dimensions.")
 
@@ -109,16 +151,20 @@ class DrawInBox:
     def save_image(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png"), ("All files", "*.*")])
         if file_path:
-            self.image.save(file_path)
+            combined_image = Image.new("RGBA", (self.canvas_width, self.canvas_height))
+            for layer in self.layers:
+                combined_image = Image.alpha_composite(combined_image, layer)
+            combined_image.convert("RGB").save(file_path)
 
     def load_image(self):
         file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"), ("All files", "*.*")])
         if file_path:
-            loaded_image = Image.open(file_path)
-            self.image = loaded_image.convert("RGB")
-            self.canvas_width, self.canvas_height = self.image.size
+            loaded_image = Image.open(file_path).convert("RGBA")
+            self.canvas_width, self.canvas_height = loaded_image.size
             self.canvas.config(width=self.canvas_width, height=self.canvas_height)
-            self.draw = ImageDraw.Draw(self.image)
+
+            self.layers = [loaded_image]
+            self.current_layer_index = 0
 
             # Update entries
             self.width_entry.delete(0, tk.END)
@@ -126,9 +172,7 @@ class DrawInBox:
             self.height_entry.delete(0, tk.END)
             self.height_entry.insert(0, str(self.canvas_height))
 
-            # Display loaded image on canvas
-            self.tk_image = ImageTk.PhotoImage(self.image)
-            self.canvas.create_image(0, 0, anchor="nw", image=self.tk_image)
+            self.update_canvas()
 
 if __name__ == "__main__":
     root = tk.Tk()
