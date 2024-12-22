@@ -18,6 +18,10 @@ class DrawInBox:
         self.canvas_height = 500
         self.brush_size = 4  # Define brush size here
 
+        # Initialize layers before creating the toolbar
+        self.layers = []
+        self.current_layer_index = 0
+
         # Main layout
         self.main_frame = tk.Frame(root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
@@ -40,9 +44,6 @@ class DrawInBox:
         self.color = "black"
         self.erasing = False
 
-        # Layers for drawing
-        self.layers = []
-        self.current_layer_index = 0
         self.add_new_layer()  # Add the initial layer
 
         # Bind events
@@ -89,8 +90,13 @@ class DrawInBox:
 
         # Layer controls
         tk.Button(toolbar, text="Add Layer", command=self.add_new_layer, **button_style).pack(pady=5)
-        tk.Button(toolbar, text="Next Layer", command=self.next_layer, **button_style).pack(pady=2)
-        tk.Button(toolbar, text="Previous Layer", command=self.previous_layer, **button_style).pack(pady=2)
+
+        # Layer display
+        tk.Label(toolbar, text="Layers:", bg="#f0f0f0").pack(pady=5)
+        self.layer_display_frame = tk.Frame(toolbar, bg="#f0f0f0")
+        self.layer_display_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.update_layer_display()
 
         # Eraser toggle
         tk.Button(toolbar, text="Eraser", command=self.toggle_eraser, **button_style).pack(pady=5)
@@ -110,6 +116,29 @@ class DrawInBox:
         new_layer = Image.new("RGBA", (self.canvas_width, self.canvas_height), (255, 255, 255, 0))
         self.layers.append(new_layer)
         self.current_layer_index = len(self.layers) - 1
+        self.update_layer_display()
+        self.update_canvas()
+
+
+    def update_layer_display(self):
+        # Clear existing layer buttons
+        for widget in self.layer_display_frame.winfo_children():
+            widget.destroy()
+
+        # Add a button for each layer
+        for index, layer in enumerate(self.layers):
+            text = f"Layer {index + 1}"
+            btn = tk.Button(self.layer_display_frame, text=text, command=lambda i=index: self.switch_layer(i))
+            if index == self.current_layer_index:
+                btn.config(bg="blue", fg="white")
+            else:
+                btn.config(bg="white", fg="black")
+            btn.pack(pady=2, fill=tk.X)
+
+    def switch_layer(self, index):
+        self.current_layer_index = index
+        self.update_layer_display()
+        self.update_canvas()
 
     def next_layer(self):
         if self.current_layer_index < len(self.layers) - 1:
