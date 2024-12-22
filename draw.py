@@ -5,71 +5,67 @@ import time
 import random
 import string
 
+
 class DrawInBox:
     def __init__(self, root):
         self.root = root
         self.root.title("OpenArtimax")
 
-        self.last_update_time = time.time()  # Track the last update time
-        self.update_interval = 0.05  # Minimum interval between updates (in seconds)
+        self.last_update_time = time.time()
+        self.update_interval = 0.05
 
-        # Define canvas dimensions and other variables before creating the toolbar
         self.canvas_width = 750
         self.canvas_height = 500
-        self.brush_size = 4  # Define brush size here
+        self.brush_size = 4
 
-        # Initialize layers before creating the toolbar
         self.layers = []
         self.current_layer_index = 0
 
-        # Main layout
-        self.main_frame = tk.Frame(root)
+        # Main layout with a modern look
+        self.main_frame = tk.Frame(root, bg="white")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Toolbar on the left
         self.create_toolbar()
 
-        # Canvas in the center
-        self.canvas_frame = tk.Frame(self.main_frame)
-        self.canvas_frame.pack(side="left", fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white")
+        # Canvas with a shadow effect
+        self.canvas_frame = tk.Canvas(self.main_frame, bg="white", highlightthickness=0)
+        self.canvas_frame.pack(side="left", fill=tk.BOTH, expand=True, padx=15, pady=15)
+        self.canvas_shadow = tk.Frame(self.canvas_frame, bg="#ddd")
+        self.canvas_shadow.place(relx=0.02, rely=0.02, relwidth=0.96, relheight=0.96)
+        self.canvas = tk.Canvas(self.canvas_shadow, width=self.canvas_width, height=self.canvas_height, bg="white", highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        # Bind keyboard shortcut Ctrl+S to the save_image method
         self.root.bind('<Control-s>', self.save_image_event)
 
-        # Variables for drawing
         self.drawing = False
         self.last_x, self.last_y = None, None
         self.color = "black"
         self.erasing = False
 
-        self.add_new_layer()  # Add the initial layer
+        self.add_new_layer()
 
-        # Bind events
         self.canvas.bind("<ButtonPress-1>", self.start_drawing)
         self.canvas.bind("<B1-Motion>", self.draw_on_canvas)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
 
     def create_toolbar(self):
-        toolbar = tk.Frame(self.main_frame, bg="#f0f0f0", pady=5)
+        toolbar = tk.Frame(self.main_frame, bg="white", padx=10, pady=10)
         toolbar.pack(side="left", fill=tk.Y)
 
         button_style = {
-            "bg": "#222",
+            "bg": "#007BFF",
             "fg": "#fff",
-            "font": ("Helvetica Neue", 12, "bold"),
+            "font": ("Helvetica Neue", 10, "bold"),
             "relief": "flat",
-            "activebackground": "#444",
+            "activebackground": "#0056b3",
             "activeforeground": "#fff",
-            "highlightthickness": 0,
-            "padx": 10,
+            "padx": 8,
             "pady": 5,
-            "borderwidth": 0,
         }
 
-        # Size controls
-        tk.Label(toolbar, text="Canvas Size:", bg="#f0f0f0").pack(pady=2)
+        label_style = {"bg": "white", "font": ("Helvetica Neue", 10), "anchor": "w"}
+
+        tk.Label(toolbar, text="Canvas Size", **label_style).pack(pady=5, anchor="w")
         self.width_entry = tk.Entry(toolbar, width=5)
         self.width_entry.insert(0, str(self.canvas_width))
         self.width_entry.pack(pady=2)
@@ -80,37 +76,30 @@ class DrawInBox:
 
         tk.Button(toolbar, text="Resize", command=self.resize_canvas, **button_style).pack(pady=5)
 
-        # Brush size controls
-        tk.Label(toolbar, text="Brush Size:", bg="#f0f0f0").pack(pady=2)
+        tk.Label(toolbar, text="Brush Size", **label_style).pack(pady=5, anchor="w")
         self.brush_size_entry = tk.Entry(toolbar, width=5)
         self.brush_size_entry.insert(0, str(self.brush_size))
         self.brush_size_entry.pack(pady=2)
 
         tk.Button(toolbar, text="Set", command=self.set_brush_size, **button_style).pack(pady=5)
 
-        # Layer controls
         tk.Button(toolbar, text="Add Layer", command=self.add_new_layer, **button_style).pack(pady=5)
 
-        # Layer display
-        tk.Label(toolbar, text="Layers:", bg="#f0f0f0").pack(pady=5)
-        self.layer_display_frame = tk.Frame(toolbar, bg="#f0f0f0")
+        tk.Label(toolbar, text="Layers", **label_style).pack(pady=5, anchor="w")
+        self.layer_display_frame = tk.Frame(toolbar, bg="white")
         self.layer_display_frame.pack(fill=tk.BOTH, expand=True)
 
         self.update_layer_display()
 
-        # Eraser toggle
         tk.Button(toolbar, text="Eraser", command=self.toggle_eraser, **button_style).pack(pady=5)
-
-        # Load and Save buttons
         tk.Button(toolbar, text="Save", command=self.save_image, **button_style).pack(pady=5)
         tk.Button(toolbar, text="Load", command=self.load_image, **button_style).pack(pady=5)
 
-        # Color palette
-        tk.Label(toolbar, text="Colors:", bg="#f0f0f0").pack(pady=5)
+        tk.Label(toolbar, text="Colors", **label_style).pack(pady=5, anchor="w")
         colors = ["black", "red", "blue", "green", "yellow", "purple"]
         for color in colors:
-            btn = tk.Button(toolbar, bg=color, width=2, command=lambda c=color: self.change_color(c))
-            btn.pack(pady=2)
+            btn = tk.Button(toolbar, bg=color, width=2, command=lambda c=color: self.change_color(c), relief="flat", bd=0)
+            btn.pack(pady=2, ipadx=10, ipady=2, anchor="w")
 
     def add_new_layer(self):
         new_layer = Image.new("RGBA", (self.canvas_width, self.canvas_height), (255, 255, 255, 0))
