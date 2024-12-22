@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageDraw, ImageTk
 import time
+import random
+import string
 
 
 class DrawInBox:
     def __init__(self, root):
-        
         self.root = root
         self.root.title("OpenArtimax")
 
@@ -24,6 +25,9 @@ class DrawInBox:
         # Set up canvas
         self.canvas = tk.Canvas(root, width=self.canvas_width, height=self.canvas_height, bg="white")
         self.canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Bind keyboard shortcut Ctrl+S to the save_image method
+        self.root.bind('<Control-s>', self.save_image_event)
 
         # Variables for drawing
         self.drawing = False
@@ -209,6 +213,22 @@ class DrawInBox:
             self.height_entry.insert(0, str(self.canvas_height))
 
             self.update_canvas()
+
+    def generate_random_name(self, length=10):
+        """Generate a random string for the filename."""
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+    def save_image_event(self, event):
+        # Generate a random name for the image
+        random_name = self.generate_random_name() + ".png"
+        
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", initialfile=random_name,
+                                                filetypes=[("PNG files", "*.png"), ("All files", "*.*")])
+        if file_path:
+            combined_image = Image.new("RGBA", (self.canvas_width, self.canvas_height))
+            for layer in self.layers:
+                combined_image = Image.alpha_composite(combined_image, layer)
+            combined_image.convert("RGB").save(file_path)
 
 
 if __name__ == "__main__":
