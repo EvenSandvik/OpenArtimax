@@ -38,6 +38,20 @@ class DrawInBox:
         toolbar = tk.Frame(self.root, bg="#f0f0f0", pady=5)
         toolbar.pack(fill=tk.X)
 
+        button_style = {
+            "bg": "#222",  # Background color (matches #222 from CSS)
+            "fg": "#fff",  # Text color (matches #fff from CSS)
+            "font": ("Helvetica Neue", 16, "bold"),  # Font style (matches font-family and size)
+            "relief": "flat",  # Flat button style to remove borders
+            "activebackground": "#222",  # Background color when hovered or focused
+            "activeforeground": "#fff",  # Text color when hovered or focused
+            "highlightthickness": 0,  # Removes outline focus
+            "padx": 20,  # Padding (horizontal)
+            "pady": 9,  # Padding (vertical)
+            "borderwidth": 0,  # No border
+        }
+
+
         # Size controls
         tk.Label(toolbar, text="Canvas Size:").pack(side="left", padx=5)
         self.width_entry = tk.Entry(toolbar, width=5)
@@ -48,7 +62,7 @@ class DrawInBox:
         self.height_entry.insert(0, str(self.canvas_height))
         self.height_entry.pack(side="left", padx=2)
 
-        tk.Button(toolbar, text="Resize", command=self.resize_canvas).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Resize", command=self.resize_canvas, **button_style).pack(side="left", padx=5)
 
         # Brush size controls
         tk.Label(toolbar, text="Brush Size:").pack(side="left", padx=5)
@@ -56,19 +70,19 @@ class DrawInBox:
         self.brush_size_entry.insert(0, str(self.brush_size))
         self.brush_size_entry.pack(side="left", padx=2)
 
-        tk.Button(toolbar, text="Set", command=self.set_brush_size).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Set", command=self.set_brush_size, **button_style).pack(side="left", padx=5)
 
         # Layer controls
-        tk.Button(toolbar, text="Add Layer", command=self.add_new_layer).pack(side="left", padx=5)
-        tk.Button(toolbar, text="Next Layer", command=self.next_layer).pack(side="left", padx=2)
-        tk.Button(toolbar, text="Previous Layer", command=self.previous_layer).pack(side="left", padx=2)
+        tk.Button(toolbar, text="Add Layer", command=self.add_new_layer, **button_style).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Next Layer", command=self.next_layer, **button_style).pack(side="left", padx=2)
+        tk.Button(toolbar, text="Previous Layer", command=self.previous_layer, **button_style).pack(side="left", padx=2)
 
         # Eraser toggle
-        tk.Button(toolbar, text="Eraser", command=self.toggle_eraser).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Eraser", command=self.toggle_eraser, **button_style).pack(side="left", padx=5)
 
         # Load and Save buttons
-        tk.Button(toolbar, text="Save", command=self.save_image).pack(side="right", padx=5)
-        tk.Button(toolbar, text="Load", command=self.load_image).pack(side="right", padx=5)
+        tk.Button(toolbar, text="Save", command=self.save_image, **button_style).pack(side="right", padx=5)
+        tk.Button(toolbar, text="Load", command=self.load_image, **button_style).pack(side="right", padx=5)
 
         # Color palette
         color_frame = tk.Frame(toolbar, bg="#f0f0f0")
@@ -93,9 +107,15 @@ class DrawInBox:
             self.current_layer_index -= 1
 
     def update_canvas(self):
+        # Clear the canvas
+        self.canvas.delete("all")
+        
+        # Combine layers into a single image
         combined_image = Image.new("RGBA", (self.canvas_width, self.canvas_height))
         for layer in self.layers:
             combined_image = Image.alpha_composite(combined_image, layer)
+        
+        # Update the canvas with the new image
         self.tk_image = ImageTk.PhotoImage(combined_image)
         self.canvas.create_image(0, 0, anchor="nw", image=self.tk_image)
 
