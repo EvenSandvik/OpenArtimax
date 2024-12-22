@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageDraw, ImageTk
 
+
 class DrawInBox:
     def __init__(self, root):
         self.root = root
@@ -11,7 +12,7 @@ class DrawInBox:
         self.canvas_width = 750
         self.canvas_height = 500
         self.canvas = tk.Canvas(root, width=self.canvas_width, height=self.canvas_height, bg="white")
-        self.canvas.pack()
+        self.canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Variables for drawing
         self.drawing = False
@@ -25,55 +26,58 @@ class DrawInBox:
         self.current_layer_index = 0
         self.add_new_layer()  # Add the initial layer
 
-        # Set up controls
-        control_frame = tk.Frame(root)
-        control_frame.pack()
-
-        # Size controls
-        tk.Label(control_frame, text="Width:").pack(side="left")
-        self.width_entry = tk.Entry(control_frame, width=5)
-        self.width_entry.insert(0, str(self.canvas_width))
-        self.width_entry.pack(side="left")
-
-        tk.Label(control_frame, text="Height:").pack(side="left")
-        self.height_entry = tk.Entry(control_frame, width=5)
-        self.height_entry.insert(0, str(self.canvas_height))
-        self.height_entry.pack(side="left")
-
-        tk.Button(control_frame, text="Resize", command=self.resize_canvas).pack(side="left")
-
-        # Brush size controls
-        tk.Label(control_frame, text="Brush Size:").pack(side="left")
-        self.brush_size_entry = tk.Entry(control_frame, width=5)
-        self.brush_size_entry.insert(0, str(self.brush_size))
-        self.brush_size_entry.pack(side="left")
-
-        tk.Button(control_frame, text="Set Brush Size", command=self.set_brush_size).pack(side="left")
-
-        # Layer controls
-        tk.Button(control_frame, text="Add Layer", command=self.add_new_layer).pack(side="left")
-        tk.Button(control_frame, text="Next Layer", command=self.next_layer).pack(side="left")
-        tk.Button(control_frame, text="Previous Layer", command=self.previous_layer).pack(side="left")
-
-        # Load and Save buttons
-        tk.Button(control_frame, text="Save Image", command=self.save_image).pack(side="left")
-        tk.Button(control_frame, text="Load Image", command=self.load_image).pack(side="left")
-
-        # Eraser toggle
-        tk.Button(control_frame, text="Toggle Eraser", command=self.toggle_eraser).pack(side="left")
-
-        # Color buttons
-        self.color_frame = tk.Frame(root)
-        self.color_frame.pack()
-        colors = ["black", "red", "blue", "green", "yellow", "purple"]
-        for color in colors:
-            btn = tk.Button(self.color_frame, bg=color, width=2, command=lambda c=color: self.change_color(c))
-            btn.pack(side="left")
+        # Top toolbar
+        self.create_toolbar()
 
         # Bind events
         self.canvas.bind("<ButtonPress-1>", self.start_drawing)
         self.canvas.bind("<B1-Motion>", self.draw_on_canvas)
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
+
+    def create_toolbar(self):
+        toolbar = tk.Frame(self.root, bg="#f0f0f0", pady=5)
+        toolbar.pack(fill=tk.X)
+
+        # Size controls
+        tk.Label(toolbar, text="Canvas Size:").pack(side="left", padx=5)
+        self.width_entry = tk.Entry(toolbar, width=5)
+        self.width_entry.insert(0, str(self.canvas_width))
+        self.width_entry.pack(side="left", padx=2)
+
+        self.height_entry = tk.Entry(toolbar, width=5)
+        self.height_entry.insert(0, str(self.canvas_height))
+        self.height_entry.pack(side="left", padx=2)
+
+        tk.Button(toolbar, text="Resize", command=self.resize_canvas).pack(side="left", padx=5)
+
+        # Brush size controls
+        tk.Label(toolbar, text="Brush Size:").pack(side="left", padx=5)
+        self.brush_size_entry = tk.Entry(toolbar, width=5)
+        self.brush_size_entry.insert(0, str(self.brush_size))
+        self.brush_size_entry.pack(side="left", padx=2)
+
+        tk.Button(toolbar, text="Set", command=self.set_brush_size).pack(side="left", padx=5)
+
+        # Layer controls
+        tk.Button(toolbar, text="Add Layer", command=self.add_new_layer).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Next Layer", command=self.next_layer).pack(side="left", padx=2)
+        tk.Button(toolbar, text="Previous Layer", command=self.previous_layer).pack(side="left", padx=2)
+
+        # Eraser toggle
+        tk.Button(toolbar, text="Eraser", command=self.toggle_eraser).pack(side="left", padx=5)
+
+        # Load and Save buttons
+        tk.Button(toolbar, text="Save", command=self.save_image).pack(side="right", padx=5)
+        tk.Button(toolbar, text="Load", command=self.load_image).pack(side="right", padx=5)
+
+        # Color palette
+        color_frame = tk.Frame(toolbar, bg="#f0f0f0")
+        color_frame.pack(side="left", padx=10)
+        colors = ["black", "red", "blue", "green", "yellow", "purple"]
+        tk.Label(color_frame, text="Colors:").pack(side="left", padx=5)
+        for color in colors:
+            btn = tk.Button(color_frame, bg=color, width=2, command=lambda c=color: self.change_color(c))
+            btn.pack(side="left", padx=1)
 
     def add_new_layer(self):
         new_layer = Image.new("RGBA", (self.canvas_width, self.canvas_height), (255, 255, 255, 0))
@@ -173,6 +177,7 @@ class DrawInBox:
             self.height_entry.insert(0, str(self.canvas_height))
 
             self.update_canvas()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
