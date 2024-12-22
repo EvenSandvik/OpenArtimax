@@ -5,10 +5,10 @@ from PIL import Image, ImageDraw, ImageTk
 class DrawInBox:
     def __init__(self, root):
         self.root = root
-        self.root.title("Draw in a Box")
+        self.root.title("OpenArtimax")
 
         # Set up canvas
-        self.canvas_width = 500
+        self.canvas_width = 750
         self.canvas_height = 500
         self.canvas = tk.Canvas(root, width=self.canvas_width, height=self.canvas_height, bg="white")
         self.canvas.pack()
@@ -17,7 +17,7 @@ class DrawInBox:
         self.drawing = False
         self.last_x, self.last_y = None, None
         self.color = "black"
-        self.brush_size = 2
+        self.brush_size = 4
         self.erasing = False
 
         # Layers for drawing
