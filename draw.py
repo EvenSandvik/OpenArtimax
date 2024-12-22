@@ -1,10 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw, ImageTk, ImageFilter
 import time
 import random
 import string
-
 
 class DrawInBox:
     def __init__(self, root):
@@ -20,12 +19,18 @@ class DrawInBox:
 
         self.layers = []
         self.current_layer_index = 0
+        self.brush_image = None
+        self.opacity = 255
 
         # Main layout with a modern look
         self.main_frame = tk.Frame(root, bg="white")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
         self.create_toolbar()
+
+        # Layer display frame
+        self.layer_display_frame = tk.Frame(self.main_frame, bg="white", padx=10, pady=10)
+        self.layer_display_frame.pack(side="right", fill=tk.Y)
 
         # Canvas with a shadow effect
         self.canvas_frame = tk.Canvas(self.main_frame, bg="white", highlightthickness=0)
@@ -83,13 +88,17 @@ class DrawInBox:
 
         tk.Button(toolbar, text="Set", command=self.set_brush_size, **button_style).pack(pady=5)
 
+        tk.Label(toolbar, text="Opacity (0-255)", **label_style).pack(pady=5, anchor="w")
+        self.opacity_entry = tk.Entry(toolbar, width=5)
+        self.opacity_entry.insert(0, str(self.opacity))
+        self.opacity_entry.pack(pady=2)
+
+        tk.Button(toolbar, text="Set Opacity", command=self.set_opacity, **button_style).pack(pady=5)
+
         tk.Button(toolbar, text="Add Layer", command=self.add_new_layer, **button_style).pack(pady=5)
 
-        tk.Label(toolbar, text="Layers", **label_style).pack(pady=5, anchor="w")
-        self.layer_display_frame = tk.Frame(toolbar, bg="white")
-        self.layer_display_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.update_layer_display()
+        tk.Label(toolbar, text="Brush", **label_style).pack(pady=5, anchor="w")
+        tk.Button(toolbar, text="Load Brush", command=self.load_brush, **button_style).pack(pady=5)
 
         tk.Button(toolbar, text="Eraser", command=self.toggle_eraser, **button_style).pack(pady=5)
         tk.Button(toolbar, text="Save", command=self.save_image, **button_style).pack(pady=5)
@@ -161,17 +170,33 @@ class DrawInBox:
         self.drawing = True
         self.last_x, self.last_y = event.x, event.y
 
+    def set_opacity(self):
+        try:
+            self.opacity = int(self.opacity_entry.get())
+        except ValueError:
+            print("Please enter a valid opacity value.")
+
+    def load_brush(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"), ("All files", "*.*")])
+        if file_path:
+            brush_image = Image.open(file_path).convert("RGBA")
+            self.brush_image = brush_image
+
     def draw_on_canvas(self, event):
         if self.drawing:
             x, y = event.x, event.y
             draw = ImageDraw.Draw(self.layers[self.current_layer_index])
-            if self.erasing:
-                draw.line([self.last_x, self.last_y, x, y], fill=(255, 255, 255, 0), width=self.brush_size)
-            else:
-                draw.line([self.last_x, self.last_y, x, y], fill=self.color, width=self.brush_size)
-            self.last_x, self.last_y = x, y
 
-            # Update the canvas only if sufficient time has passed
+            if self.brush_image:
+                brush = self.brush_image.resize((self.brush_size, self.brush_size)).copy()
+                alpha = brush.split()[3].point(lambda p: p * (self.opacity / 255))
+                brush.putalpha(alpha)
+                self.layers[self.current_layer_index].paste(brush, (x - self.brush_size // 2, y - self.brush_size // 2), brush)
+            else:
+                color = (*self.root.winfo_rgb(self.color)[:3], self.opacity)
+                draw.line([self.last_x, self.last_y, x, y], fill=color, width=self.brush_size)
+            
+            self.last_x, self.last_y = x, y
             current_time = time.time()
             if current_time - self.last_update_time >= self.update_interval:
                 self.update_canvas()
