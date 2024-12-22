@@ -9,6 +9,7 @@ class DrawInBox:
     def __init__(self, root):
         self.root = root
         self.root.title("OpenArtimax")
+        self.root.configure(bg="#f0f0f0")
 
         self.last_update_time = time.time()
         self.update_interval = 0.05
@@ -16,6 +17,9 @@ class DrawInBox:
         self.canvas_width = 750
         self.canvas_height = 500
         self.brush_size = 4
+        self.scale_factor = 1.0  # Initial zoom level
+        self.offset_x = 0  # Canvas horizontal offset for panning
+        self.offset_y = 0  # Canvas vertical offset for panning
 
         self.layers = []
         self.current_layer_index = 0
@@ -29,16 +33,21 @@ class DrawInBox:
         self.create_toolbar()
 
         # Layer display frame
-        self.layer_display_frame = tk.Frame(self.main_frame, bg="white", padx=10, pady=10)
+        self.layer_display_frame = tk.Frame(self.main_frame, bg="#f0f0f0", padx=10, pady=10)
         self.layer_display_frame.pack(side="right", fill=tk.Y)
 
         # Canvas with a shadow effect
-        self.canvas_frame = tk.Canvas(self.main_frame, bg="white", highlightthickness=0)
+        self.canvas_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
         self.canvas_frame.pack(side="left", fill=tk.BOTH, expand=True, padx=15, pady=15)
-        self.canvas_shadow = tk.Frame(self.canvas_frame, bg="#ddd")
-        self.canvas_shadow.place(relx=0.02, rely=0.02, relwidth=0.96, relheight=0.96)
-        self.canvas = tk.Canvas(self.canvas_shadow, width=self.canvas_width, height=self.canvas_height, bg="white", highlightthickness=0)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas = tk.Canvas(
+            self.canvas_frame,
+            width=self.canvas_width,
+            height=self.canvas_height,
+            bg="white",
+            highlightthickness=1,
+            highlightbackground="#888",
+        )
+        self.canvas.pack(expand=True)
 
         self.root.bind('<Control-s>', self.save_image_event)
 
