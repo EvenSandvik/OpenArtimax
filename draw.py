@@ -5,7 +5,6 @@ import time
 import random
 import string
 
-
 class DrawInBox:
     def __init__(self, root):
         self.root = root
@@ -19,12 +18,18 @@ class DrawInBox:
         self.canvas_height = 500
         self.brush_size = 4  # Define brush size here
 
-        # Top toolbar
+        # Main layout
+        self.main_frame = tk.Frame(root)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Toolbar on the left
         self.create_toolbar()
 
-        # Set up canvas
-        self.canvas = tk.Canvas(root, width=self.canvas_width, height=self.canvas_height, bg="white")
-        self.canvas.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Canvas in the center
+        self.canvas_frame = tk.Frame(self.main_frame)
+        self.canvas_frame.pack(side="left", fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.canvas = tk.Canvas(self.canvas_frame, width=self.canvas_width, height=self.canvas_height, bg="white")
+        self.canvas.pack(fill=tk.BOTH, expand=True)
 
         # Bind keyboard shortcut Ctrl+S to the save_image method
         self.root.bind('<Control-s>', self.save_image_event)
@@ -46,63 +51,60 @@ class DrawInBox:
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
 
     def create_toolbar(self):
-        toolbar = tk.Frame(self.root, bg="#f0f0f0", pady=5)
-        toolbar.pack(fill=tk.X)
+        toolbar = tk.Frame(self.main_frame, bg="#f0f0f0", pady=5)
+        toolbar.pack(side="left", fill=tk.Y)
 
         button_style = {
-            "bg": "#222",  # Background color (matches #222 from CSS)
-            "fg": "#fff",  # Text color (matches #fff from CSS)
-            "font": ("Helvetica Neue", 16, "bold"),  # Font style (matches font-family and size)
-            "relief": "flat",  # Flat button style to remove borders
-            "activebackground": "#222",  # Background color when hovered or focused
-            "activeforeground": "#fff",  # Text color when hovered or focused
-            "highlightthickness": 0,  # Removes outline focus
-            "padx": 20,  # Padding (horizontal)
-            "pady": 9,  # Padding (vertical)
-            "borderwidth": 0,  # No border
+            "bg": "#222",
+            "fg": "#fff",
+            "font": ("Helvetica Neue", 12, "bold"),
+            "relief": "flat",
+            "activebackground": "#444",
+            "activeforeground": "#fff",
+            "highlightthickness": 0,
+            "padx": 10,
+            "pady": 5,
+            "borderwidth": 0,
         }
 
-
         # Size controls
-        tk.Label(toolbar, text="Canvas Size:").pack(side="left", padx=5)
+        tk.Label(toolbar, text="Canvas Size:", bg="#f0f0f0").pack(pady=2)
         self.width_entry = tk.Entry(toolbar, width=5)
         self.width_entry.insert(0, str(self.canvas_width))
-        self.width_entry.pack(side="left", padx=2)
+        self.width_entry.pack(pady=2)
 
         self.height_entry = tk.Entry(toolbar, width=5)
         self.height_entry.insert(0, str(self.canvas_height))
-        self.height_entry.pack(side="left", padx=2)
+        self.height_entry.pack(pady=2)
 
-        tk.Button(toolbar, text="Resize", command=self.resize_canvas, **button_style).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Resize", command=self.resize_canvas, **button_style).pack(pady=5)
 
         # Brush size controls
-        tk.Label(toolbar, text="Brush Size:").pack(side="left", padx=5)
+        tk.Label(toolbar, text="Brush Size:", bg="#f0f0f0").pack(pady=2)
         self.brush_size_entry = tk.Entry(toolbar, width=5)
         self.brush_size_entry.insert(0, str(self.brush_size))
-        self.brush_size_entry.pack(side="left", padx=2)
+        self.brush_size_entry.pack(pady=2)
 
-        tk.Button(toolbar, text="Set", command=self.set_brush_size, **button_style).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Set", command=self.set_brush_size, **button_style).pack(pady=5)
 
         # Layer controls
-        tk.Button(toolbar, text="Add Layer", command=self.add_new_layer, **button_style).pack(side="left", padx=5)
-        tk.Button(toolbar, text="Next Layer", command=self.next_layer, **button_style).pack(side="left", padx=2)
-        tk.Button(toolbar, text="Previous Layer", command=self.previous_layer, **button_style).pack(side="left", padx=2)
+        tk.Button(toolbar, text="Add Layer", command=self.add_new_layer, **button_style).pack(pady=5)
+        tk.Button(toolbar, text="Next Layer", command=self.next_layer, **button_style).pack(pady=2)
+        tk.Button(toolbar, text="Previous Layer", command=self.previous_layer, **button_style).pack(pady=2)
 
         # Eraser toggle
-        tk.Button(toolbar, text="Eraser", command=self.toggle_eraser, **button_style).pack(side="left", padx=5)
+        tk.Button(toolbar, text="Eraser", command=self.toggle_eraser, **button_style).pack(pady=5)
 
         # Load and Save buttons
-        tk.Button(toolbar, text="Save", command=self.save_image, **button_style).pack(side="right", padx=5)
-        tk.Button(toolbar, text="Load", command=self.load_image, **button_style).pack(side="right", padx=5)
+        tk.Button(toolbar, text="Save", command=self.save_image, **button_style).pack(pady=5)
+        tk.Button(toolbar, text="Load", command=self.load_image, **button_style).pack(pady=5)
 
         # Color palette
-        color_frame = tk.Frame(toolbar, bg="#f0f0f0")
-        color_frame.pack(side="left", padx=10)
+        tk.Label(toolbar, text="Colors:", bg="#f0f0f0").pack(pady=5)
         colors = ["black", "red", "blue", "green", "yellow", "purple"]
-        tk.Label(color_frame, text="Colors:").pack(side="left", padx=5)
         for color in colors:
-            btn = tk.Button(color_frame, bg=color, width=2, command=lambda c=color: self.change_color(c))
-            btn.pack(side="left", padx=1)
+            btn = tk.Button(toolbar, bg=color, width=2, command=lambda c=color: self.change_color(c))
+            btn.pack(pady=2)
 
     def add_new_layer(self):
         new_layer = Image.new("RGBA", (self.canvas_width, self.canvas_height), (255, 255, 255, 0))
