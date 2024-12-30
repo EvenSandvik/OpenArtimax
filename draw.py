@@ -169,7 +169,7 @@ class DrawInBox:
                 self.layer_display_frame,
                 image=tk_thumbnail,
                 command=lambda i=index: self.switch_layer(i),
-                bg="blue" if index == self.current_layer_index else "white"
+                bg="white" if index == self.current_layer_index else "white"
             )
             btn.pack(pady=2, fill=tk.X)
 
