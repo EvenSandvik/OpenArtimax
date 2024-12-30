@@ -63,7 +63,7 @@ class DrawInBox:
         self.canvas.bind("<ButtonRelease-1>", self.stop_drawing)
 
     def create_toolbar(self):
-        toolbar = tk.Frame(self.main_frame, bg="white", padx=10, pady=10)
+        toolbar = tk.Frame(self.main_frame, bg="white", padx=15, pady=15)
         toolbar.pack(side="left", fill=tk.Y)
 
         button_style = {
@@ -75,20 +75,40 @@ class DrawInBox:
             "activeforeground": "#fff",
             "padx": 8,
             "pady": 5,
+            "borderwidth": 5,
+            "highlightthickness": 0,
+            "bd": 0,
+            "cursor": "hand2",
+            "highlightbackground": "#007BFF",
+            "highlightcolor": "#007BFF",
+            "highlightthickness": 0
         }
 
-        label_style = {"bg": "white", "font": ("Helvetica Neue", 10), "anchor": "w"}
+        label_style = {"bg": "white", "font": ("Helvetica Neue", 10, "bold"), "anchor": "w"}
 
-        tk.Label(toolbar, text="Canvas Size", **label_style).pack(pady=5, anchor="w")
-        self.width_entry = tk.Entry(toolbar, width=5)
+        # Canvas label
+        tk.Label(toolbar, text="Canvas", **label_style).pack(pady=5, anchor="w")
+
+        # Frame to hold the width and height inputs horizontally
+        input_frame = tk.Frame(toolbar, bg="white")
+        input_frame.pack(pady=5)
+
+        # Width input with label "W:"
+        tk.Label(input_frame, text="W:", **label_style).pack(side="left", padx=5)
+        self.width_entry = tk.Entry(input_frame, width=5)
         self.width_entry.insert(0, str(self.canvas_width))
-        self.width_entry.pack(pady=2)
+        self.width_entry.pack(side="left")
 
-        self.height_entry = tk.Entry(toolbar, width=5)
+        # Height input with label "H:"
+        tk.Label(input_frame, text="H:", **label_style).pack(side="left", padx=5)
+        self.height_entry = tk.Entry(input_frame, width=5)
         self.height_entry.insert(0, str(self.canvas_height))
-        self.height_entry.pack(pady=2)
+        self.height_entry.pack(side="left")
 
-        tk.Button(toolbar, text="Resize", command=self.resize_canvas, **button_style).pack(pady=5)
+        # Resize button (greyed out)
+        resize_button = tk.Button(toolbar, text="Resize", command=self.resize_canvas, **button_style)
+        resize_button.config(state="disabled")  # Greyed out button
+        resize_button.pack(pady=5)
 
         tk.Label(toolbar, text="Brush Size", **label_style).pack(pady=5, anchor="w")
         self.brush_size_entry = tk.Entry(toolbar, width=5)
@@ -114,7 +134,7 @@ class DrawInBox:
         tk.Button(toolbar, text="Load", command=self.load_image, **button_style).pack(pady=5)
 
         tk.Label(toolbar, text="Colors", **label_style).pack(pady=5, anchor="w")
-        colors = ["black", "red", "blue", "green", "yellow", "purple"]
+        colors = ["black", "red", "blue", "green", "yellow", "purple", "pink"]
         for color in colors:
             btn = tk.Button(toolbar, bg=color, width=2, command=lambda c=color: self.change_color(c), relief="flat", bd=0)
             btn.pack(pady=2, ipadx=10, ipady=2, anchor="w")
@@ -132,15 +152,27 @@ class DrawInBox:
         for widget in self.layer_display_frame.winfo_children():
             widget.destroy()
 
-        # Add a button for each layer
+        self.layer_thumbnails = []  # To store the thumbnails for preventing garbage collection
+
         for index, layer in enumerate(self.layers):
-            text = f"Layer {index + 1}"
-            btn = tk.Button(self.layer_display_frame, text=text, command=lambda i=index: self.switch_layer(i))
-            if index == self.current_layer_index:
-                btn.config(bg="blue", fg="white")
-            else:
-                btn.config(bg="white", fg="black")
+            # Create a thumbnail for the layer
+            thumbnail_size = (100, 100)
+            thumbnail = layer.copy()
+            thumbnail.thumbnail(thumbnail_size, Image.Resampling.LANCZOS)
+            
+            # Convert the thumbnail to a PhotoImage
+            tk_thumbnail = ImageTk.PhotoImage(thumbnail)
+            self.layer_thumbnails.append(tk_thumbnail)  # Prevent garbage collection
+            
+            # Create a button with the thumbnail
+            btn = tk.Button(
+                self.layer_display_frame,
+                image=tk_thumbnail,
+                command=lambda i=index: self.switch_layer(i),
+                bg="blue" if index == self.current_layer_index else "white"
+            )
             btn.pack(pady=2, fill=tk.X)
+
 
     def switch_layer(self, index):
         self.current_layer_index = index
